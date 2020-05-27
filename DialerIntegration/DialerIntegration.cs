@@ -1,11 +1,15 @@
 ﻿using System;
+using System.Reflection;
+using System.Windows.Forms;
 using System.Xml.Linq;
 
-namespace DialerIntegration {
+namespace DialerIntegration {   
     [MyPhonePlugins.CRMPluginLoader]
     public class DialerIntegration {
+        //private Campanha f2 = null;
         private static DialerIntegration instance = null;               // Holds the instance
         private MyPhonePlugins.IMyPhoneCallHandler callHandler = null;  // Holds the handler
+        private Campanha f2 = null;
 
         [MyPhonePlugins.CRMPluginInitializer]
         public static void Loader(MyPhonePlugins.IMyPhoneCallHandler callHandler) {
@@ -20,6 +24,7 @@ namespace DialerIntegration {
         }
 
         // Processes the status of the call
+        [STAThread]
         private void callHandler_OnCallStatusChanged(object sender, MyPhonePlugins.CallStatus callInfo) {
             var extensionInfo = sender as MyPhonePlugins.IExtensionInfo;
 
@@ -29,10 +34,16 @@ namespace DialerIntegration {
                         string url = configXml.Element("Url").Value.ToString();
 
                         if (!string.IsNullOrEmpty(callInfo.OtherPartyNumber)) {
-                            url = url + callInfo.OtherPartyNumber;
-                            System.Diagnostics.Process.Start(url);
+                            url = url + "/api/view_campaign.php?number=" + callInfo.OtherPartyNumber;
+
+                            f2 = new Campanha(url);
+                            f2.ShowDialog();
                         }
 
+                        break;
+                    };
+                case MyPhonePlugins.CallState.Ended: {
+                        f2.Close();
                         break;
                     };
                 case MyPhonePlugins.CallState.Ringing: {
@@ -41,6 +52,7 @@ namespace DialerIntegration {
                 case MyPhonePlugins.CallState.Undefined: {
                         break;
                     };
+
                 default: {
                         break;
                     };
